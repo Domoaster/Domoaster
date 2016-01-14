@@ -37,6 +37,8 @@ class IProtocol
     virtual void Start () = 0 ;
 
     virtual void Receive (uint8_t) = 0 ;
+    virtual void Receive (std::vector<uint16_t> &) = 0 ;
+    
     virtual Json::Value onIHMRequest (const WebServer::HTTPRequest *) = 0 ;
     //~ virtual void Send (IFrame *) = 0 ;
 
