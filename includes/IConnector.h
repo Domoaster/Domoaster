@@ -23,11 +23,12 @@ namespace domoaster {
 
     class IConnector {
     public:
+
         virtual std::string Name() = 0;
         virtual std::string Class() = 0;
 
-        virtual void Init() = 0;
-        virtual void Start() = 0;
+        virtual bool Init() = 0;
+        virtual bool Start() = 0;
 
         virtual void Receive() = 0;
         virtual void Send(bool) = 0;

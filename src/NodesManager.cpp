@@ -13,92 +13,112 @@
 #include "WebBrowser.h"
 #include "main.h"
 
-using namespace domoaster ;
-using namespace std ;
+using namespace domoaster;
+using namespace std;
 
-void NodesManager::Init (Kernel *k)
-{
-	std::stringstream ihm;
-	std::stringstream path;
+void NodesManager::Init(Kernel *k) {
+    std::stringstream ihm;
+    std::stringstream path;
 
-  std::string nodeProtocol;
-  std::string nodeType;
-  std::string nodeName;
+    std::string nodeProtocol;
+    std::string nodeType;
+    std::string nodeName;
 
-  int nodeId;
+    int nodeId;
+    int nodeDBId;
 
-	ihm << PARAM_STR("ihm_address") << ":" << PARAM_STR("ihm_port");
-	path << PARAM_STR("ihm_base") << PARAM_STR("ihm_nodes_list");
+    ihm << PARAM_STR("ihm_address") << ":" << PARAM_STR("ihm_port");
+    path << PARAM_STR("ihm_base") << PARAM_STR("ihm_nodes_list");
 
-	memset (_nodes, 0, sizeof (_nodes)) ;
+    memset(_nodes, 0, sizeof (_nodes));
 
-  try {
-    DOMOASTER_INFO << "Request HUB for nodes list";
-		WebBrowser browser(ihm.str());
-		const Json::Value nodes = browser.doGet(path.str(), "");
-    for ( int index = 0; (unsigned)index < nodes.size(); ++index ) {
+    try {
+        DOMOASTER_INFO << "Request HUB for nodes list";
+        WebBrowser browser(ihm.str());
+        const Json::Value nodes = browser.doGet(path.str(), "");
+        for (int index = 0; (unsigned) index < nodes.size(); ++index) {
 
-      nodeId = nodes[index].get("id", 0).asInt();
-      nodeProtocol = nodes[index].get("protocol", "").asString();
-      nodeType = nodes[index].get("type", "default").asString();
-      nodeName = nodes[index].get("name", "").asString();
+            nodeId = nodes[index].get("address", 0).asInt();
+            nodeDBId = nodes[index].get("id", 0).asInt();
+            nodeProtocol = nodes[index].get("protocol", "").asString();
+            nodeType = nodes[index].get("type", "default").asString();
+            nodeName = nodes[index].get("name", "").asString();
 
-			IProtocol *pProtocol = k->Protocol (nodeProtocol) ;
-      if (pProtocol == NULL) {
-        DOMOASTER_WARN << "Node " << nodeId << " : protocol " << nodeProtocol << " not loaded";
-        continue;
-      }
-      
-			if (nodeType == "default") {
-        nodeType = pProtocol->getDefaultNode();
-      }
+            IProtocol *pProtocol = k->Protocol(nodeProtocol);
+            if (pProtocol == NULL) {
+                //DOMOASTER_WARN << "Node " << nodeId << " : protocol " << nodeProtocol << " not loaded";
+                DOMOASTER_WARN << "Node " <<  index
+                    << "\n   DB id : " << nodeDBId
+                    << "\n   name : " << nodeName
+                    << "\n   protocol : " << nodeProtocol << " not loaded!" 
+                    << "\n   address : " << nodeId 
+                    << "\n   type : " << nodeType ;
+                continue;
+            }
 
-      INode *pNode = k->Node (nodeType) ;
-      if (pNode == NULL) {
-        DOMOASTER_WARN << "Node " << nodeId << " : type " << nodeType << " not loaded";
-        continue;
-      }
+            if (nodeType == "default") {
+                nodeType = pProtocol->getDefaultNode();
+            }
 
-      _nodes[nodeId] = pNode ;
-      
-      DOMOASTER_INFO << nodeId << " : " << nodeProtocol <<
-        " : " << nodeType << " : " << nodeName;
+            INode *pNode = k->Node(nodeType);
+            if (pNode == NULL) {
+                //DOMOASTER_WARN << "Node " << nodeId << " : type " << nodeType << " not loaded";
+                DOMOASTER_WARN << "Node " <<  index
+                    << "\n   DB id : " << nodeDBId
+                    << "\n   name : " << nodeName
+                    << "\n   protocol : " << nodeProtocol 
+                    << "\n   address : " << nodeId 
+                    << "\n   type : " << nodeType << " not loaded!";
+                continue;
+            }
+
+            _nodes[nodeId] = pNode;
+
+            //DOMOASTER_INFO << nodeId << " : " << nodeProtocol << " : " << nodeType << " : " << nodeName;
+            DOMOASTER_INFO << "Node " <<  index
+                    << "\n   DB id : " << nodeDBId
+                    << "\n   name : " << nodeName
+                    << "\n   protocol : " << nodeProtocol 
+                    << "\n   address : " << nodeId 
+                    << "\n   type : " << nodeType 
+                    << "\n   _nodes[nodeId] : " << _nodes[nodeId] ;
+        }
+        _kernel = *k;
+    } catch (const runtime_error & e) {
+        DOMOASTER_FATAL << "NodesManager::Init FAILED !!! : " << e.what();
+        exit_handler(1);
     }
-    _kernel = *k;
-  }
-  catch (const runtime_error & e)  {
-    DOMOASTER_FATAL << "NodesManager::Init FAILED !!! : " << e.what();
-    exit_handler(1);
-  }
 }
 
-void NodesManager::SubscribeREST (WebServer::HTTPServer *server)
-{
-  WebServer::NodeRequestHandler *n = new WebServer::NodeRequestHandler(this);
-  server->RegisterHandler("/node", n);
+void NodesManager::SubscribeREST(WebServer::HTTPServer *server) {
+    WebServer::NodeRequestHandler *n = new WebServer::NodeRequestHandler(this);
+    server->RegisterHandler("/node", n);
 }
 
-int NodesManager::SendCmd (int target, int sender, int param, int cmd)
-{
-	INode *pNode = GetNode(target) ;
-	if (pNode == NULL) {
-		DOMOASTER_FATAL << "NodesManager::SendCmd FAILED, node " << target << " unknown !!!"  ;
-	}
+int NodesManager::SendCmd(int target, int sender, int param, int cmd) {
+    DOMOASTER_INFO << "NodesManager:: SendCmd to node" << target;
+    INode *pNode = GetNode(target);
 
-	IFrame frame ;
+    if (pNode == NULL) {
+        DOMOASTER_FATAL << "NodesManager::SendCmd FAILED, node " << target << " unknown !!!";
+    }
 
-	frame.Dump("Dump from NodesManager::SendMsg") ;
+    IFrame frame;
 
-	return 1 ;
+    frame.Dump("Dump from NodesManager::SendMsg");
+
+    return 1;
 }
 
-INode * NodesManager::GetNode (IFrame *frame)
-{
-	return GetNode (frame->receptor) ;
+INode * NodesManager::GetNode(IFrame *frame) {
+    return GetNode(frame->receptor);
 }
 
-INode * NodesManager::GetNode (int nodeId)
-{
-  DOMOASTER_INFO << "NodesManager::GetNode " << nodeId;
-	return _nodes[nodeId] ;
+INode * NodesManager::GetNode(int nodeId) {
+    DOMOASTER_INFO << "NodesManager::GetNode " << nodeId;
+    DOMOASTER_INFO << "NodesManager::GetNode " <<  (* _nodes[nodeId]).Name();
+    DOMOASTER_INFO << "NodesManager::GetNode " <<  (* _nodes[nodeId]).Class();
+    DOMOASTER_INFO << "NodesManager::GetNode " <<  (* _nodes[nodeId]).Protocol();
+    DOMOASTER_INFO << "NodesManager::GetNode " <<  _nodes[nodeId];
+    return _nodes[nodeId];
 }

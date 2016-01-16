@@ -69,7 +69,7 @@ void RestLogDestination::Sending(Json::Value & message){
 		// Build POST request
 		std::stringstream request;
 		std::string req_param;
-		request << "http://" << this->hub_url << "/api/logs/add";
+		request << "http://" << this->hub_url << "logs/add";
 		req_param = request.str();
 		Json::FastWriter writer;
 
@@ -114,7 +114,7 @@ void RestLogDestination::Sending(log_message & message){
 		// Build get request
 		std::stringstream request;
 		std::string req_param;
-		request << "http://" << this->hub_url << "/api/logs/add";
+		request << "http://" << this->hub_url << "logs/add";
 		req_param = request.str();
 
 		char *temp = curl_escape(message.log_line.c_str(), message.log_line.length());

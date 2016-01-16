@@ -28,7 +28,7 @@ class IFeature : public Ident
 
   public:
     IFeature (std::string name) : Ident(name) {} ;
-    ~IFeature () {} ;
+    virtual ~IFeature () {} ;
 } ;
 
 } ; // namespace domoaster

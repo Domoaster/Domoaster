@@ -11,6 +11,7 @@
 #include "RestLogDestination.h"
 #include "SettingsParser.h"
 #include "WebServer.h"
+#include "WebBrowser.h"
 
 namespace domoaster {
 

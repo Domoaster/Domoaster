@@ -42,13 +42,20 @@ int IhmCommunicationThread::SendFrame(IFrame &frame)
 	int sender = (int) frame.sender;
 
   IManager *nm = _kernel->Manager ("nodes");
-
-	INode *pNode = nm->GetNode (sender) ;
-	if (pNode == NULL) {
+  std::string test = "Node Ydle over serial";
+        INode *pNode = nm->GetNode (sender) ;
+	if (strcmp(((*pNode).Name()).c_str(),test.c_str())==0) {
+		DOMOASTER_DEBUG << "YES MAN !";
+		return 0 ;
+	}
+        
+        if (pNode == NULL) {
 		DOMOASTER_DEBUG << "SendFrame : node " << sender << " UNKNOWN";
 		return 0 ;
 	}
-
+	
+	
+        
   std::stringstream ihm;
 	ihm << PARAM_STR("ihm_address") << ":" << PARAM_STR("ihm_port");
 
